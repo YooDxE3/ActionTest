@@ -3,7 +3,7 @@ name: Update README with Changelog
 on:
   push:
     branches:
-      - main   # ou troque pela branch principal do seu projeto
+      - main
 
 jobs:
   update-readme:
@@ -22,14 +22,15 @@ jobs:
       - name: Update README with changelog
         run: |
           COMMIT_MESSAGE="${{ steps.last_commit.outputs.message }}"
-          
-          # Se não existir "## Changelog", cria
+          # Escape barras e barras invertidas para sed
+          ESCAPED_MESSAGE=$(printf '%s\n' "$COMMIT_MESSAGE" | sed -e 's/[\/&]/\\&/g')
+
+          # Cria seção Changelog se não existir
           if ! grep -q "## Changelog" README.md; then
             echo -e "\n## Changelog\n" >> README.md
           fi
-          
-          # Adiciona a nova entrada com data e hora
-          sed -i "s|## Changelog|## Changelog\n- $(date '+%Y-%m-%d %H:%M') - $COMMIT_MESSAGE|" README.md
+
+          sed -i "/## Changelog/a - $(date '+%Y-%m-%d %H:%M') - $ESCAPED_MESSAGE" README.md
 
       - name: Commit changes
         run: |
@@ -38,3 +39,4 @@ jobs:
           git add README.md
           git commit -m "docs: update changelog with last commit message" || echo "No changes to commit"
           git push
+
